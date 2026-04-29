@@ -15,7 +15,7 @@ const pages = [
 
 export default function Home() {
 	return (
-		<div className="flex flex-1 items-center justify-center bg-zinc-50 dark:bg-black">
+		<div className="flex flex-1 items-center justify-center bg-white dark:bg-zinc-900">
 			<main className="w-full max-w-xl px-8 py-20">
 				<h1 className="mb-2 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
 					サンプルページ一覧
