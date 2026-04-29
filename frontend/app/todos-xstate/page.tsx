@@ -14,7 +14,7 @@ import {
   Title,
 } from "@mantine/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useActor } from "@xstate/react";
+import { useMachine } from "@xstate/react";
 import type { Todo } from "@/app/api/todos/route";
 import { todoMachine } from "./machine";
 
@@ -36,7 +36,7 @@ async function createTodo(title: string): Promise<Todo> {
 
 export default function TodosXStatePage() {
   const queryClient = useQueryClient();
-  const [snapshot, send] = useActor(todoMachine);
+  const [snapshot, send] = useMachine(todoMachine);
   const { title, error } = snapshot.context;
   const isModalOpen =
     snapshot.matches("creating") ||
