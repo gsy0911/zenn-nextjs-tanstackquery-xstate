@@ -2,14 +2,20 @@
 
 import {
 	Badge,
+	Button,
 	Card,
 	Container,
+	Group,
 	Loader,
+	Modal,
 	Stack,
 	Text,
+	TextInput,
 	Title,
 } from "@mantine/core";
-import { useQuery } from "@tanstack/react-query";
+import { useDisclosure } from "@mantine/hooks";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import type { Todo } from "@/app/api/todos/route";
 
 async function fetchTodos(): Promise<Todo[]> {
@@ -20,7 +26,23 @@ async function fetchTodos(): Promise<Todo[]> {
 	return res.json();
 }
 
+async function createTodo(title: string): Promise<Todo> {
+	const res = await fetch("/api/todos", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ title }),
+	});
+	if (!res.ok) {
+		throw new Error("TODO の作成に失敗しました");
+	}
+	return res.json();
+}
+
 export default function TodosPage() {
+	const queryClient = useQueryClient();
+	const [opened, { open, close }] = useDisclosure(false);
+	const [title, setTitle] = useState("");
+
 	const {
 		data: todos,
 		isPending,
@@ -31,11 +53,51 @@ export default function TodosPage() {
 		queryFn: fetchTodos,
 	});
 
+	const mutation = useMutation({
+		mutationFn: createTodo,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["todos"] });
+			setTitle("");
+			close();
+		},
+	});
+
+	const handleSubmit = () => {
+		if (!title.trim()) return;
+		mutation.mutate(title.trim());
+	};
+
 	return (
 		<Container size="sm" py="xl">
-			<Title order={1} mb="lg">
-				TODO 一覧
-			</Title>
+			<Group justify="space-between" mb="lg">
+				<Title order={1}>TODO 一覧</Title>
+				<Button onClick={open}>+ 新規作成</Button>
+			</Group>
+
+			<Modal opened={opened} onClose={close} title="TODO を作成" centered>
+				<Stack>
+					<TextInput
+						label="タイトル"
+						placeholder="例: Next.js を学ぶ"
+						value={title}
+						onChange={(e) => setTitle(e.currentTarget.value)}
+						onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+						error={mutation.isError ? mutation.error.message : undefined}
+					/>
+					<Group justify="flex-end">
+						<Button variant="default" onClick={close}>
+							キャンセル
+						</Button>
+						<Button
+							onClick={handleSubmit}
+							loading={mutation.isPending}
+							disabled={!title.trim()}
+						>
+							作成
+						</Button>
+					</Group>
+				</Stack>
+			</Modal>
 
 			{isPending && <Loader />}
 
